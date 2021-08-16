@@ -19,7 +19,7 @@ if __name__ == "__main__":
     ts1 = tf.one_hot(itemList, depth=len(itemList))
     print(ts1)
 
-    # specity custom values for one hot encoding
+    # specify custom values for one hot encoding
     ts1 = tf.one_hot(itemList, depth=len(itemList), on_value=True, off_value=False)
     print(ts1)
 
