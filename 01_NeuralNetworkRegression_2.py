@@ -58,6 +58,10 @@ if __name__ == "__main__":
 
     # save the model
     model.save('./savedModel')
+
+    # load the model
+    tf.keras.models.load_model('./savedModel')
+    
     y_pred = tf.transpose(tf.constant(model.predict(X_test)))
 
     PlotPredictions(X_train, y_train, X_test, y_test, y_pred)
