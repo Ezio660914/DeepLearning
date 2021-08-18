@@ -58,14 +58,14 @@ def main():
     # plt.show()
     tf.random.set_seed(12)
     model = tf.keras.Sequential([
-        tf.keras.layers.Dense(100),
-        tf.keras.layers.Dense(10),
-        tf.keras.layers.Dense(1),
+        tf.keras.layers.Dense(100, tf.keras.activations.relu),
+        tf.keras.layers.Dense(10, tf.keras.activations.relu),
+        tf.keras.layers.Dense(1, tf.keras.activations.sigmoid),
     ])
     model.compile(tf.keras.optimizers.Adam(),
                   tf.keras.losses.BinaryCrossentropy(),
-                  ['accuracy'])
-    model.fit(X, y, epochs=10)
+                  [tf.keras.metrics.BinaryAccuracy()])
+    model.fit(X, y, epochs=100)
     PlotDecisionBoundary(model, X, y)
     pass
 
