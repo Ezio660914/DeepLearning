@@ -45,8 +45,9 @@ if __name__ == "__main__":
     tf.random.set_seed(23)
     model = tf.keras.Sequential(
         [
-            tf.keras.layers.Dense(100),
-            tf.keras.layers.Dense(10),
+            tf.keras.layers.Dense(1024, 'relu'),
+            tf.keras.layers.Dense(512, 'relu'),
+            tf.keras.layers.Dense(10, 'relu'),
             tf.keras.layers.Dense(1),
         ]
     )
