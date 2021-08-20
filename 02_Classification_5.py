@@ -17,8 +17,6 @@ from tensorflow.keras.datasets import fashion_mnist
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
-from sklearn.metrics import confusion_matrix
-import itertools
 
 # the data has already been sorted into training and test sets
 """Fashion-MNIST is a dataset of Zalando's article images
@@ -63,13 +61,67 @@ def NeuralNetwork(X_train, y_train, X_test, y_test):
     return model, history
 
 
+def PlotConfusionMatrix(y_test, y_preds, classes=None, figSize=(10, 10), textSize=15):
+    from sklearn.metrics import confusion_matrix
+    import itertools
+
+    # Create the confusion matrix
+    cm: np.ndarray = confusion_matrix(y_test, tf.round(y_preds))
+    cm_norm = cm.astype("float") / cm.sum(axis=1)[:, np.newaxis]  # normalize it
+    n_classes = cm.shape[0]
+
+    # Let's prettify it
+    fig, ax = plt.subplots(figsize=figSize)
+    # Create a matrix plot
+    cax = ax.matshow(cm,
+                     cmap=plt.cm.get_cmap(
+                         'Blues'))  # https://matplotlib.org/3.2.0/api/_as_gen/matplotlib.axes.Axes.matshow.html
+    fig.colorbar(cax)
+    # set labels to be classes
+    if classes:
+        labels = classes
+    else:
+        labels = np.arange(cm.shape[0])
+
+    # Label the axes
+    ax.set(title="Confusion Matrix",
+           xlabel="Predicted label",
+           ylabel="True label",
+           xticks=np.arange(n_classes),
+           yticks=np.arange(n_classes),
+           xticklabels=labels,
+           yticklabels=labels)
+
+    # Set x-axis labels to bottom
+    ax.xaxis.set_label_position("bottom")
+    ax.xaxis.tick_bottom()
+
+    # Adjust label size
+    ax.xaxis.label.set_size(textSize)
+    ax.yaxis.label.set_size(textSize)
+    ax.title.set_size(textSize)
+
+    # Set threshold for different colors
+    threshold = (cm.max() + cm.min()) / 2.
+
+    # Plot the text on each cell
+    for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+        plt.text(j, i, f"{cm[i, j]} ({cm_norm[i, j] * 100:.1f}%)",
+                 horizontalalignment="center",
+                 color="white" if cm[i, j] > threshold else "black",
+                 size=textSize)
+    plt.show()
+
+
 def main():
     # PlotExample(11)
     # PlotExamplesRandomly()
     trainData_norm = trainData / 255.0
     testData_norm = testData / 255.0
-    NeuralNetwork(trainData_norm, trainLabels, testData_norm, testLabels)
-
+    model, history = NeuralNetwork(trainData_norm, trainLabels, testData_norm, testLabels)
+    y_probs = model.predict(testData_norm)
+    y_preds = y_probs.argmax(axis=1)
+    PlotConfusionMatrix(testLabels, y_preds, classNames, (15, 15), 10)
     pass
 
 
