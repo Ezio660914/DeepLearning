@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from sklearn.datasets import make_circles
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import confusion_matrix
 
 
 def PlotDecisionBoundary(model, X, y):
@@ -69,11 +70,20 @@ def main():
                   [tf.keras.metrics.BinaryAccuracy()])
 
     # introduce a learning rate callback
-    lrScheduler = tf.keras.callbacks.LearningRateScheduler(lambda epoch: 1e-4 * 10 ** (epoch / 20))
+    # lrScheduler = tf.keras.callbacks.LearningRateScheduler(lambda epoch: 1e-4 * 10 ** (epoch / 20))
 
-    history = model.fit(X_train, y_train, epochs=100, callbacks=[lrScheduler])
-    # history = model.fit(X_train, y_train, epochs=20)
+    # history = model.fit(X_train, y_train, epochs=100, callbacks=[lrScheduler])
+    history = model.fit(X_train, y_train, epochs=20)
     model.evaluate(X_test, y_test)
+
+    # make prediction
+    y_pred = model.predict(X_test)
+    y_pred = tf.round(y_pred)
+
+    # create confusion metrix
+    cm = confusion_matrix(y_test, y_pred)
+    print(cm)
+
     plt.figure(figsize=(12, 6))
     plt.subplot(1, 2, 1)
     plt.title('Train')
