@@ -45,7 +45,14 @@ def main():
     tf.random.set_seed(32)
 
     # preprocess data, normalization
-    trainDataGen = ImageDataGenerator(rescale=1. / 255)
+    # use ImageDataGenerator to do data augmentation
+    trainDataGen = ImageDataGenerator(rescale=1. / 255,
+                                      rotation_range=0.2,
+                                      shear_range=0.2,
+                                      zoom_range=0.2,
+                                      width_shift_range=0.2,
+                                      height_shift_range=0.2,
+                                      horizontal_flip=True)
     validDataGen = ImageDataGenerator(rescale=1. / 255)
 
     # import data from directories and turn it into batches
@@ -66,7 +73,7 @@ def main():
     plt.title(labels[i])
     plt.tick_params(axis='both', which='both', bottom=False, left=False, labelleft=False, labelbottom=False)
     plt.xlabel(images[i].shape)
-    # plt.show()
+    plt.show()
     # create cnn model (use tiny VGG model)
     model = tf.keras.Sequential([
         tf.keras.layers.Conv2D(filters=10,
