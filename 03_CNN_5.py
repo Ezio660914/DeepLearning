@@ -65,23 +65,18 @@ def main():
     model = tf.keras.Sequential([
         tf.keras.layers.Conv2D(20, 3,
                                activation="relu",
-                               input_shape=(224, 224, 3),
-                               kernel_initializer=tf.keras.initializers.random_normal),
+                               input_shape=(224, 224, 3)),
         tf.keras.layers.Conv2D(20, 3,
-                               activation="relu",
-                               kernel_initializer=tf.keras.initializers.random_normal),
+                               activation="relu"),
         tf.keras.layers.MaxPool2D(3),
         tf.keras.layers.Conv2D(20, 3,
-                               activation="relu",
-                               kernel_initializer=tf.keras.initializers.random_normal),
+                               activation="relu"),
         tf.keras.layers.Conv2D(20, 3,
-                               activation="relu",
-                               kernel_initializer=tf.keras.initializers.random_normal),
+                               activation="relu"),
         tf.keras.layers.MaxPool2D(3),
         tf.keras.layers.Flatten(),
         tf.keras.layers.Dense(10,
-                              activation=tf.keras.activations.softmax,
-                              kernel_initializer=tf.keras.initializers.random_normal)
+                              activation=tf.keras.activations.softmax)
     ])
     model.compile(tf.keras.optimizers.Adam(),
                   tf.keras.losses.CategoricalCrossentropy(),
@@ -94,7 +89,7 @@ def main():
                         steps_per_epoch=len(trainData),
                         validation_data=testData,
                         validation_steps=len(testData))
-    model.save("./savedModel/food101_MultiClass")
+    model.save("./savedModel/food101_MultiClass_2")
     pd.DataFrame(history.history).plot()
     plt.show()
     pass
