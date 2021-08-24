@@ -47,11 +47,11 @@ def main():
     # preprocess data, normalization
     # use ImageDataGenerator to do data augmentation
     trainDataGen = ImageDataGenerator(rescale=1. / 255,
-                                      rotation_range=0.2,
-                                      shear_range=0.2,
-                                      zoom_range=0.2,
-                                      width_shift_range=0.2,
-                                      height_shift_range=0.2,
+                                      rotation_range=0.1,
+                                      shear_range=0.1,
+                                      zoom_range=0.1,
+                                      width_shift_range=0.1,
+                                      height_shift_range=0.1,
                                       horizontal_flip=True)
     validDataGen = ImageDataGenerator(rescale=1. / 255)
 
@@ -86,11 +86,12 @@ def main():
         tf.keras.layers.Conv2D(10, 3, activation=tf.keras.activations.relu),
         tf.keras.layers.MaxPool2D(2),
         tf.keras.layers.Flatten(),
-        tf.keras.layers.Dense(10, tf.keras.activations.relu),
+        tf.keras.layers.Dense(100, tf.keras.activations.relu),
         tf.keras.layers.Dense(10, tf.keras.activations.relu),
         tf.keras.layers.Dense(1, tf.keras.activations.sigmoid)
     ])
-    callback = tf.keras.callbacks.EarlyStopping("val_binary_accuracy", patience=1)
+    # define a callback
+    callback = tf.keras.callbacks.EarlyStopping("val_binary_accuracy", patience=3)
 
     model.compile(tf.keras.optimizers.Adam(),
                   tf.keras.losses.BinaryCrossentropy(),
@@ -101,7 +102,9 @@ def main():
                         steps_per_epoch=len(trainData),
                         validation_data=testData,
                         validation_steps=len(testData),
-                        callbacks=callback)
+                        callbacks=[callback])
+    # save the model
+    model.save("./savedModel/food101/")
     pd.DataFrame(history.history).plot()
     plt.show()
     pass
