@@ -61,17 +61,27 @@ def main():
                                                target_size=(224, 224),
                                                batch_size=32)
     # create a model
+    tf.random.set_seed(26)
     model = tf.keras.Sequential([
         tf.keras.layers.Conv2D(20, 3,
                                activation="relu",
-                               input_shape=(224, 224, 3)),
-        tf.keras.layers.Conv2D(20, 3, activation="relu"),
+                               input_shape=(224, 224, 3),
+                               kernel_initializer=tf.keras.initializers.random_normal),
+        tf.keras.layers.Conv2D(20, 3,
+                               activation="relu",
+                               kernel_initializer=tf.keras.initializers.random_normal),
         tf.keras.layers.MaxPool2D(3),
-        tf.keras.layers.Conv2D(20, 3, activation="relu"),
-        tf.keras.layers.Conv2D(20, 3, activation="relu"),
+        tf.keras.layers.Conv2D(20, 3,
+                               activation="relu",
+                               kernel_initializer=tf.keras.initializers.random_normal),
+        tf.keras.layers.Conv2D(20, 3,
+                               activation="relu",
+                               kernel_initializer=tf.keras.initializers.random_normal),
         tf.keras.layers.MaxPool2D(3),
         tf.keras.layers.Flatten(),
-        tf.keras.layers.Dense(10, activation=tf.keras.activations.softmax)
+        tf.keras.layers.Dense(10,
+                              activation=tf.keras.activations.softmax,
+                              kernel_initializer=tf.keras.initializers.random_normal)
     ])
     model.compile(tf.keras.optimizers.Adam(),
                   tf.keras.losses.CategoricalCrossentropy(),
@@ -85,6 +95,8 @@ def main():
                         validation_data=testData,
                         validation_steps=len(testData))
     model.save("./savedModel/food101_MultiClass")
+    pd.DataFrame(history.history).plot()
+    plt.show()
     pass
 
 
