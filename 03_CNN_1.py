@@ -18,6 +18,12 @@ import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import pandas as pd
 
+try:
+    gpus = tf.config.experimental.list_physical_devices('GPU')
+    tf.config.experimental.set_memory_growth(gpus[0], True)
+except:
+    print("GPU error")
+
 trainDataDir = "./resource/food101/pizza_steak/train/"
 testDataDir = "./resource/food101/pizza_steak/test/"
 foodCategory = ["pizza", "steak"]
@@ -65,23 +71,23 @@ def main():
     model = tf.keras.Sequential([
         tf.keras.layers.Conv2D(filters=10,
                                kernel_size=3,
-                               activation="relu",
+                               activation=tf.keras.activations.relu,
                                input_shape=(224, 224, 3)),
-        tf.keras.layers.Conv2D(10, 3, activation="relu"),
+        tf.keras.layers.Conv2D(10, 3, activation=tf.keras.activations.relu),
         tf.keras.layers.MaxPool2D(2),
-        tf.keras.layers.Conv2D(10, 3, activation="relu"),
-        tf.keras.layers.Conv2D(10, 3, activation="relu"),
+        tf.keras.layers.Conv2D(10, 3, activation=tf.keras.activations.relu),
+        tf.keras.layers.Conv2D(10, 3, activation=tf.keras.activations.relu),
         tf.keras.layers.MaxPool2D(2),
         tf.keras.layers.Flatten(),
-        tf.keras.layers.Dense(256, "relu"),
-        tf.keras.layers.Dense(128, "relu"),
-        tf.keras.layers.Dense(1, "sigmoid")
+        tf.keras.layers.Dense(256, tf.keras.activations.relu),
+        tf.keras.layers.Dense(128, tf.keras.activations.relu),
+        tf.keras.layers.Dense(1, tf.keras.activations.sigmoid)
     ])
     callback = tf.keras.callbacks.EarlyStopping("binary_accuracy", patience=3)
 
     model.compile(tf.keras.optimizers.Adam(),
                   tf.keras.losses.BinaryCrossentropy(),
-                  [tf.keras.metrics.BinaryAccuracy()], )
+                  [tf.keras.metrics.BinaryAccuracy()])
     model.fit(trainData,
               epochs=5000,
               steps_per_epoch=len(trainData),
