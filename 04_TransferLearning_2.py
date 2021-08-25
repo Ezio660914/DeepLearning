@@ -27,7 +27,7 @@ except:
 
 # setup the train and test directories
 trainDir = "resource/food101/10_food_classes_10_percent/train/"
-testDir = "resource/food101/10_food_classes_10_percent/test/"
+testDir = "resource/food101/10_food_classes_all_data/test/"
 logDir = "./log/tensorflow_hub"
 foodCategory = np.array(sorted(os.listdir(trainDir)))
 imgShape = (224, 224, 3)
@@ -37,7 +37,7 @@ savedModelDir = [
     "savedModel/efficientnet_b0_feature-vector_1",
     "savedModel/imagenet_resnet_v2_50_feature_vector_5"
 ]
-modelName = "resNet50V2"
+modelName = "efficientnet"
 epochs = 5
 
 
@@ -80,12 +80,14 @@ def PlotTrainHistory(history):
     plt.plot(lossFrame)
     plt.title("losses")
     plt.xlabel("epochs")
+    plt.xticks(range(epochs))
     plt.legend(["train loss", "val loss"])
 
     plt.figure()
     plt.plot(accuracyFrame)
     plt.title("accuracy")
     plt.xlabel("epochs")
+    plt.xticks(range(epochs))
     plt.legend(["train accuracy", "val accuracy"])
 
 
@@ -93,14 +95,14 @@ def main():
     # PlotImageRandomly(trainDir, random.choice(foodCategory))
     # plt.show()
     # preprocess
-    # trainDataGen = ImageDataGenerator(rescale=1 / 255.,
-    #                                   rotation_range=0.1,
-    #                                   shear_range=0.1,
-    #                                   zoom_range=0.1,
-    #                                   width_shift_range=0.1,
-    #                                   height_shift_range=0.1,
-    #                                   horizontal_flip=True)
-    trainDataGen = ImageDataGenerator(rescale=1 / 255.)
+    trainDataGen = ImageDataGenerator(rescale=1 / 255.,
+                                      rotation_range=0.1,
+                                      shear_range=0.1,
+                                      zoom_range=0.1,
+                                      width_shift_range=0.1,
+                                      height_shift_range=0.1,
+                                      horizontal_flip=True)
+    # trainDataGen = ImageDataGenerator(rescale=1 / 255.)
     testDataGen = ImageDataGenerator(rescale=1 / 255.)
     # load data
     trainData = trainDataGen.flow_from_directory(trainDir,
@@ -117,7 +119,7 @@ def main():
 
     callback = CreateTensorboardCallback(logDir, modelName)
     # create a model with tensorflow hub
-    resNetModel = CreateModel(savedModelDir[1], numClasses)
+    resNetModel = CreateModel(savedModelDir[0], numClasses)
     resNetModel.summary()
 
     resNetHistory = resNetModel.fit(trainData,
