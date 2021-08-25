@@ -113,7 +113,7 @@ def main():
 
     # create a model checkpoint callback
     # set checkpoint path
-    checkpointDir = savedModelDir + "/checkpoint"
+    checkpointDir = savedModelDir + "/checkpoint/checkpoint"
     checkpointCallback = keras.callbacks.ModelCheckpoint(checkpointDir,
                                                          save_best_only=True,
                                                          save_weights_only=True,
