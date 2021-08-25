@@ -59,6 +59,25 @@ def main():
         RandomHeight(0.1),
         RandomWidth(0.1)
     ])
+
+    # visualise data augmentation layer
+    targetClass = random.choice(trainData.class_names)
+    targetDir = trainDir + "/" + targetClass
+    randomImg = random.choice(os.listdir(targetDir))
+    randomImgDir = targetDir + "/" + randomImg
+    img = mpimg.imread(randomImgDir)
+    plt.subplot(1, 2, 1)
+    plt.imshow(img)
+    plt.title(f"{targetClass} (Original)")
+    plt.axis(False)
+
+    augmentedImg = dataAugmentation(tf.expand_dims(img, 0))
+    plt.subplot(1, 2, 2)
+    plt.imshow(tf.squeeze(augmentedImg) / 255.)
+    plt.title(f"{targetClass} (Augmented)")
+    plt.axis(False)
+
+    plt.show()
     # create the model with keras functional api
     # create base model with tf.keras.applications
     baseModel = keras.applications.EfficientNetB0(False)
