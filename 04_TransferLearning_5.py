@@ -85,6 +85,7 @@ def main():
     baseModel = keras.applications.EfficientNetB1(include_top=False)
     # freeze the base model
     baseModel.trainable = False
+
     # create inputs into the model
     inputs = keras.layers.Input(shape=imgShape,
                                 name="Inputlayer")
@@ -96,24 +97,22 @@ def main():
     x = dataAugmentation(inputs)
     # pass the inputs to the base model
     x = baseModel(x, training=False)
-    print(x.shape)
     # average pool the outputs of the base model
     x = keras.layers.GlobalAvgPool2D(name="AveragePoolLayer")(x)
-    print(x.shape)
     # create the output activation layer
     outputs = keras.layers.Dense(10, activation="softmax", name="OutputLayer")(x)
     # combine the inputs with the outputs into a model
 
     model = keras.Model(inputs=inputs, outputs=outputs)
     # compile the model
-    model.compile(keras.optimizers.Adam(),
+    model.compile(keras.optimizers.Adam(learning_rate=1e-3),
                   keras.losses.CategoricalCrossentropy(),
                   ["accuracy"])
     model.summary()
 
     # create a model checkpoint callback
     # set checkpoint path
-    checkpointDir = savedModelDir + "/checkpoint/checkpoint"
+    checkpointDir = savedModelDir + f"/checkpoint/checkpoint_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}"
     checkpointCallback = keras.callbacks.ModelCheckpoint(checkpointDir,
                                                          save_best_only=True,
                                                          save_weights_only=True,
@@ -127,7 +126,29 @@ def main():
                         validation_data=testData,
                         validation_steps=len(testData),
                         validation_freq=1,
-                        callbacks=[checkpointCallback])
+                        callbacks=[checkpointCallback],
+                        )
+
+    # start fine-tuning
+    baseModel.trainable = True
+    # fine-tuning with the last 10 layers
+    for layer in baseModel.layers[:-10]:
+        layer.trainable = False
+    for layer in baseModel.layers:
+        print((layer.name, layer.trainable))
+    model.compile(keras.optimizers.Adam(learning_rate=1e-4),  # learning_rate is 10x lower than before for fine-tuning
+                  keras.losses.CategoricalCrossentropy(),
+                  ["accuracy"])
+    model.summary()
+    history_fineTuning = model.fit(trainData,
+                                   epochs=epochs + 5,  # Fine tune for another 5 epochs
+                                   steps_per_epoch=len(trainData),
+                                   validation_data=testData,
+                                   validation_steps=len(testData),
+                                   validation_freq=1,
+                                   callbacks=[checkpointCallback],
+                                   initial_epoch=history.epoch[-1]  # start from previous last epoch
+                                   )
     model.save(savedModelDir)
     pass
 
