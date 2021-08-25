@@ -28,13 +28,12 @@ except:
     print("GPU error")
 
 # setup the train and test directories
-trainDir = "resource/food101/10_food_classes_10_percent/train/"
+trainDir = ["resource/food101/10_food_classes_10_percent/train/",
+            "resource/food101/10_food_classes_all_data/train/"]
 testDir = "resource/food101/10_food_classes_all_data/test/"
 logDir = "./log/tensorflow_hub"
 savedModelDir = "./savedModel/food101_MultiClass_3"
-foodCategory = np.array(sorted(os.listdir(trainDir)))
 imgShape = (224, 224, 3)
-numClasses = len(foodCategory)
 epochs = 5
 
 
@@ -43,11 +42,14 @@ def main():
     # plt.show()
     # preprocess
 
-    trainData = keras.preprocessing.image_dataset_from_directory(trainDir,
-                                                                 image_size=imgShape[:2],
-                                                                 label_mode="categorical",
-                                                                 batch_size=32)
-
+    trainData_10p = keras.preprocessing.image_dataset_from_directory(trainDir[0],
+                                                                     image_size=imgShape[:2],
+                                                                     label_mode="categorical",
+                                                                     batch_size=32)
+    trainData_Full = keras.preprocessing.image_dataset_from_directory(trainDir[1],
+                                                                      image_size=imgShape[:2],
+                                                                      label_mode="categorical",
+                                                                      batch_size=32)
     testData = keras.preprocessing.image_dataset_from_directory(testDir,
                                                                 image_size=imgShape[:2],
                                                                 label_mode="categorical",
@@ -62,24 +64,7 @@ def main():
         RandomWidth(0.1)
     ])
 
-    # visualise data augmentation layer
-    targetClass = random.choice(trainData.class_names)
-    targetDir = trainDir + "/" + targetClass
-    randomImg = random.choice(os.listdir(targetDir))
-    randomImgDir = targetDir + "/" + randomImg
-    img = mpimg.imread(randomImgDir)
-    plt.subplot(1, 2, 1)
-    plt.imshow(img)
-    plt.title(f"{targetClass} (Original)")
-    plt.axis(False)
-
-    augmentedImg = dataAugmentation(tf.expand_dims(img, 0))
-    plt.subplot(1, 2, 2)
-    plt.imshow(tf.squeeze(augmentedImg) / 255.)
-    plt.title(f"{targetClass} (Augmented)")
-    plt.axis(False)
-
-    plt.show()
+    CompareAugmentedImageData(trainDir[0], trainData_10p, dataAugmentation)
     # create the model with keras functional api
     # create base model with tf.keras.applications
     baseModel = keras.applications.EfficientNetB1(include_top=False)
@@ -120,9 +105,9 @@ def main():
                                                          verbose=1)
 
     # fit the model
-    history = model.fit(trainData,
+    history = model.fit(trainData_10p,
                         epochs=epochs,
-                        steps_per_epoch=len(trainData),
+                        steps_per_epoch=len(trainData_10p),
                         validation_data=testData,
                         validation_steps=len(testData),
                         validation_freq=1,
@@ -134,15 +119,14 @@ def main():
     # fine-tuning with the last 10 layers
     for layer in baseModel.layers[:-10]:
         layer.trainable = False
-    for layer in baseModel.layers:
-        print((layer.name, layer.trainable))
+    
     model.compile(keras.optimizers.Adam(learning_rate=1e-4),  # learning_rate is 10x lower than before for fine-tuning
                   keras.losses.CategoricalCrossentropy(),
                   ["accuracy"])
     model.summary()
-    history_fineTuning = model.fit(trainData,
+    history_fineTuning = model.fit(trainData_Full,
                                    epochs=epochs + 5,  # Fine tune for another 5 epochs
-                                   steps_per_epoch=len(trainData),
+                                   steps_per_epoch=len(trainData_Full),
                                    validation_data=testData,
                                    validation_steps=len(testData),
                                    validation_freq=1,
@@ -151,6 +135,25 @@ def main():
                                    )
     model.save(savedModelDir)
     pass
+
+
+def CompareAugmentedImageData(trainDir, trainData, dataAugmenter):
+    # visualise data augmentation layer
+    targetClass = random.choice(trainData.class_names)
+    targetDir = trainDir + "/" + targetClass
+    randomImg = random.choice(os.listdir(targetDir))
+    randomImgDir = targetDir + "/" + randomImg
+    img = mpimg.imread(randomImgDir)
+    plt.subplot(1, 2, 1)
+    plt.imshow(img)
+    plt.title(f"{targetClass} (Original)")
+    plt.axis(False)
+    augmentedImg = dataAugmenter(tf.expand_dims(img, 0))
+    plt.subplot(1, 2, 2)
+    plt.imshow(tf.squeeze(augmentedImg) / 255.)
+    plt.title(f"{targetClass} (Augmented)")
+    plt.axis(False)
+    plt.show()
 
 
 if __name__ == "__main__":

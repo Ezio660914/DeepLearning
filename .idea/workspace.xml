@@ -8,7 +8,6 @@
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/04_TransferLearning_5.py" beforeDir="false" afterPath="$PROJECT_DIR$/04_TransferLearning_5.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/savedModel/food101_MultiClass_3/checkpoint/checkpoint" beforeDir="false" afterPath="$PROJECT_DIR$/savedModel/food101_MultiClass_3/checkpoint/checkpoint" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/savedModel/food101_MultiClass_3/keras_metadata.pb" beforeDir="false" afterPath="$PROJECT_DIR$/savedModel/food101_MultiClass_3/keras_metadata.pb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/savedModel/food101_MultiClass_3/saved_model.pb" beforeDir="false" afterPath="$PROJECT_DIR$/savedModel/food101_MultiClass_3/saved_model.pb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/savedModel/food101_MultiClass_3/variables/variables.data-00000-of-00001" beforeDir="false" afterPath="$PROJECT_DIR$/savedModel/food101_MultiClass_3/variables/variables.data-00000-of-00001" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/savedModel/food101_MultiClass_3/variables/variables.index" beforeDir="false" afterPath="$PROJECT_DIR$/savedModel/food101_MultiClass_3/variables/variables.index" afterDir="false" />
