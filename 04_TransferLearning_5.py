@@ -31,6 +31,7 @@ except:
 trainDir = "resource/food101/10_food_classes_10_percent/train/"
 testDir = "resource/food101/10_food_classes_all_data/test/"
 logDir = "./log/tensorflow_hub"
+savedModelDir = "./savedModel/food101_MultiClass_3"
 foodCategory = np.array(sorted(os.listdir(trainDir)))
 imgShape = (224, 224, 3)
 numClasses = len(foodCategory)
@@ -109,13 +110,25 @@ def main():
                   keras.losses.CategoricalCrossentropy(),
                   ["accuracy"])
     model.summary()
+
+    # create a model checkpoint callback
+    # set checkpoint path
+    checkpointDir = savedModelDir + "/checkpoint"
+    checkpointCallback = keras.callbacks.ModelCheckpoint(checkpointDir,
+                                                         save_best_only=True,
+                                                         save_weights_only=True,
+                                                         save_freq="epoch",
+                                                         verbose=1)
+
     # fit the model
     history = model.fit(trainData,
                         epochs=epochs,
                         steps_per_epoch=len(trainData),
                         validation_data=testData,
                         validation_steps=len(testData),
-                        validation_freq=1)
+                        validation_freq=1,
+                        callbacks=[checkpointCallback])
+    model.save(savedModelDir)
     pass
 
 
