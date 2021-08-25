@@ -13,6 +13,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'  # or any {'0', '1', '2'}
 import tensorflow as tf
 import tensorflow.keras as keras
 import tensorflow_hub as hub
+from tensorflow.keras.layers.experimental.preprocessing import *
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
@@ -49,6 +50,15 @@ def main():
                                                                 image_size=(224, 224),
                                                                 label_mode="categorical",
                                                                 batch_size=32)
+
+    # adding data augmentation
+    dataAugmentation = keras.Sequential([
+        RandomFlip("horizontal"),
+        RandomRotation(0.1),
+        RandomZoom(0.1),
+        RandomHeight(0.1),
+        RandomWidth(0.1)
+    ])
     # create the model with keras functional api
     # create base model with tf.keras.applications
     baseModel = keras.applications.EfficientNetB0(False)
