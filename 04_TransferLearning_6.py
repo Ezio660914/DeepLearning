@@ -53,7 +53,8 @@ def main():
     ckptCallback = keras.callbacks.ModelCheckpoint(checkpointDir,
                                                    monitor="val_accuracy",
                                                    save_weights_only=True,
-                                                   save_best_only=True)
+                                                   save_best_only=True,
+                                                   verbose=1)
     # setup data augmentation
     dataAugmentation = keras.Sequential([
         RandomFlip("horizontal"),
@@ -61,26 +62,28 @@ def main():
         RandomHeight(0.2),
         RandomWidth(0.2),
         RandomZoom(0.2),
-        # Rescaling(1 / 255.)
-    ], name="DataAugmentation")
+        Rescaling(1 / 255.)
+    ], name="DataAugment")
 
     # create model
-    baseModel = keras.applications.EfficientNetB0(include_top=False)
+    # baseModel = keras.applications.EfficientNetB0(include_top=False)
+    baseModel: keras.Model = keras.models.load_model(preTrainedModelDir, compile=False)
+    baseModel = keras.Model(inputs=baseModel.input, outputs=baseModel.layers[-2].output)
     baseModel.trainable = False
-
+    # baseModel.summary()
     # setup model architecture with trainable top layers
-    inputs = keras.layers.Input(shape=imgShape,
-                                name="InputLayer")
+    inputs = keras.layers.Input(shape=imgShape)
     x = dataAugmentation(inputs)
     x = baseModel(x, training=False)
-    x = keras.layers.GlobalAveragePooling2D(name="GlobalAveragePoolLayer")(x)
+    x = keras.layers.GlobalAveragePooling2D()(x)
     outputs = keras.layers.Dense(len(trainData.class_names),
-                                 activation="softmax",
-                                 name="OutputLayer")(x)
+                                 activation="softmax")(x)
+    # initialize the model
     model = keras.Model(inputs=inputs, outputs=outputs)
     model.compile(keras.optimizers.Adam(),
                   keras.losses.CategoricalCrossentropy(),
                   ["accuracy"])
+
     model.summary()
     history = model.fit(trainData,
                         epochs=initialEpochs,
@@ -88,7 +91,23 @@ def main():
                         validation_data=testData,
                         validation_steps=int(0.15 * len(testData)),
                         callbacks=[ckptCallback])
-
+    # start fine tuning
+    baseModel.trainable = True
+    for layer in baseModel.layers[:-10]:
+        layer.trainable = False
+    model.compile(keras.optimizers.Adam(1e-4),
+                  keras.losses.CategoricalCrossentropy(),
+                  ["accuracy"])
+    model.summary()
+    history_fineTuning = model.fit(trainData,
+                                   epochs=initialEpochs + 5,
+                                   steps_per_epoch=len(trainData),
+                                   validation_data=testData,
+                                   validation_steps=int(0.15 * len(testData)),
+                                   callbacks=[ckptCallback],
+                                   initial_epoch=history.epoch[-1])
+    model.save(saveModelDir)
+    model.evaluate(trainData)
     pass
 
 
