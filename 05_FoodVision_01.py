@@ -21,7 +21,6 @@ import matplotlib.image as mpimg
 import pandas as pd
 import pathlib
 import datetime
-from sklearn.preprocessing import OneHotEncoder
 
 try:
     gpus = tf.config.experimental.list_physical_devices('GPU')
@@ -42,62 +41,20 @@ initialEpochs = 3
 numClasses = len(os.listdir(trainDir))
 
 
-def PreProcessImg(imagePath, label, imgSize=(224, 224)):
-    """
-    Converts image datatype from uint8 to float32,
-    re-range from 255 to 1, and reshapes image to the given imgSize
-    """
-    file = tf.io.read_file(imagePath)
-    image = tf.image.decode_jpeg(file, 3)
-    image = tf.cast(image, tf.float32)
-    image = tf.image.resize(image, imgSize)
-    return image, label
-
-
-def GetDataList(dataDir):
-    """
-    get all data path from data directory
-    """
-    dataPathList = list(pathlib.Path(dataDir).glob("*/*"))
-    pathStrList = [str(path) for path in dataPathList]
-    labelStrList = np.array([path.parent.name for path in dataPathList])[:, None]
-    labelOneHot = OneHotEncoder(dtype=np.float32).fit_transform(labelStrList).toarray()
-    return pathStrList, labelOneHot
-
-
-def GetDataset(dir, shuffle=True):
-    # obtain the dataset
-    pathStrList, labelOneHot = GetDataList(dir)
-    dataPathDs = tf.data.Dataset.from_tensor_slices((pathStrList, labelOneHot))
-    # load and preprocess the image as dataset
-    dataset = dataPathDs.map(map_func=PreProcessImg, num_parallel_calls=tf.data.AUTOTUNE)
-    # shuffle data and turn it into batches and prefetch it (load it faster)
-    if shuffle:
-        prefetchData = dataset.shuffle(buffer_size=1000).batch(batch_size=32).prefetch(
-            buffer_size=tf.data.AUTOTUNE)
-    else:
-        prefetchData = dataset.batch(batch_size=32).prefetch(
-            buffer_size=tf.data.AUTOTUNE)
-    return prefetchData
-
-
 def main():
     # obtain train dataset
-    trainData = GetDataset(trainDir)
-    # trainData = keras.preprocessing.image_dataset_from_directory(trainDir,
-    #                                                              label_mode="categorical",
-    #                                                              batch_size=32,
-    #                                                              image_size=imgSize,
-    #                                                              shuffle=True)
+    trainData = keras.preprocessing.image_dataset_from_directory(trainDir,
+                                                                 label_mode="categorical",
+                                                                 batch_size=32,
+                                                                 image_size=imgSize,
+                                                                 shuffle=True)
     # obtain test dataset
-    testData = GetDataset(testDir, False)
-    # testData = keras.preprocessing.image_dataset_from_directory(testDir,
-    #                                                             label_mode="categorical",
-    #                                                             batch_size=32,
-    #                                                             image_size=imgSize,
-    #                                                             shuffle=False)
-    print([i for i in testData.take(1)])
-    # print([i for i in testData.take(1)])
+    testData = keras.preprocessing.image_dataset_from_directory(testDir,
+                                                                label_mode="categorical",
+                                                                batch_size=32,
+                                                                image_size=imgSize,
+                                                                shuffle=False)
+
     # create model callbacks
     ckptCallback = keras.callbacks.ModelCheckpoint(checkpointDir,
                                                    monitor="val_accuracy",
@@ -127,7 +84,7 @@ def main():
     # fit the model
     history = model.fit(trainData,
                         epochs=initialEpochs,
-                        steps_per_epoch=int(0.1 * len(trainData)),
+                        steps_per_epoch=len(trainData),
                         validation_data=testData,
                         validation_steps=int(0.15 * len(testData)),
                         callbacks=[ckptCallback])
