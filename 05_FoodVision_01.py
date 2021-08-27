@@ -89,7 +89,7 @@ def main():
                         validation_steps=int(0.15 * len(testData)),
                         callbacks=[ckptCallback])
     model.evaluate(testData)
-
+    model.save(saveModelDir)
     pass
 
 
