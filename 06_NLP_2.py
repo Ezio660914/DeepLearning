@@ -45,7 +45,6 @@ def GetDataRandomly(dataFrame: pd.DataFrame, amount=1):
 
 
 def main():
-    GetDataRandomly(StaticConst.trainDF)
     # use train test split to split training data into training and validation sets
     trainData, valData, trainLabel, valLabel = train_test_split(StaticConst.trainDFShuffled["text"].to_numpy(),
                                                                 StaticConst.trainDFShuffled["target"].to_numpy(),
@@ -65,8 +64,12 @@ def main():
                                        output_dim=128,
                                        input_length=maxLength)
     sentence = random.choice(trainData)
-    print(f"Original text:\n{sentence}\n\nEmbedded version")
+    # make token
+    sentenceToken = textVectorizer([sentence])
     # embed the random sentence, turn it into dense vectors of fixed size
+    sentenceEmbedded = embedding(sentenceToken)
+    print(f"Original text:\n{sentence}\n\nEmbedded version")
+    print(sentenceEmbedded)
 
 
 if __name__ == "__main__":
