@@ -19,6 +19,10 @@ import pandas as pd
 import pathlib
 import datetime
 from sklearn.model_selection import train_test_split
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.pipeline import Pipeline
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 
 try:
     gpus = tf.config.experimental.list_physical_devices('GPU')
@@ -42,6 +46,23 @@ def GetDataRandomly(dataFrame: pd.DataFrame, amount=1):
         print("---------------------------------\n")
         print(f"Target: {target}", "(real disaster)" if target > 0 else "(not real disaster)")
         print(f"Text:\n{text}\n")
+
+
+def EvaluateModel(y_true, y_pred):
+    """
+    calculate model accuracy, precision, recall and f1 score of a binary classification
+    """
+    acc = accuracy_score(y_true, y_pred)
+    pre = precision_score(y_true, y_pred)
+    recall = recall_score(y_true, y_pred)
+    f1 = f1_score(y_true, y_pred)
+    modelResult = {
+        "accuracy": acc,
+        "precision": pre,
+        "recall": recall,
+        "f1": f1
+    }
+    return modelResult
 
 
 def main():
@@ -68,8 +89,17 @@ def main():
     sentenceToken = textVectorizer([sentence])
     # embed the random sentence, turn it into dense vectors of fixed size
     sentenceEmbedded = embedding(sentenceToken)
-    print(f"Original text:\n{sentence}\n\nEmbedded version")
-    print(sentenceEmbedded)
+    # print(f"Original text:\n{sentence}\n\nEmbedded version")
+    # print(sentenceEmbedded)
+    # create a base line model
+    model_0 = Pipeline([("tfidf", TfidfVectorizer()),  # convert words to number vector
+                        ("clf", MultinomialNB())])  # model the text
+    # fit the pipeline to the training data
+    model_0.fit(trainData, trainLabel)
+    # evaluate the baseline model
+    # make predictions
+    preds = model_0.predict(valData)
+    print(EvaluateModel(valLabel, preds))
 
 
 if __name__ == "__main__":
