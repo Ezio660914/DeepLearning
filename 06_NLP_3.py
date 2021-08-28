@@ -91,6 +91,7 @@ def main():
     sentenceEmbedded = embedding(sentenceToken)
     # print(f"Original text:\n{sentence}\n\nEmbedded version")
     # print(sentenceEmbedded)
+    """    native bayes model    """
     # create a base line model
     model_0 = Pipeline([("tfidf", TfidfVectorizer()),  # convert words to number vector
                         ("clf", MultinomialNB())])  # model the text
@@ -100,6 +101,23 @@ def main():
     # make predictions
     preds = model_0.predict(valData)
     print(EvaluateModel(valLabel, preds))
+
+    """feed-forward neural network (dense model)"""
+    # build model with the functional api
+    inputs = keras.layers.Input(shape=(1,), dtype=tf.string)  # inputs are 1d strings
+    x = textVectorizer(inputs)  # turn the input text to numbers
+    x = embedding(x)  # create an embedding of the numberized text
+    x = keras.layers.GlobalAveragePooling1D()(x)  # condense the feature vector
+    outputs = keras.layers.Dense(1, activation=keras.activations.sigmoid)(x)  # output layer
+    model_1 = keras.Model(inputs, outputs)
+    model_1.compile(keras.optimizers.Adam(),
+                    keras.losses.BinaryCrossentropy(),
+                    ["accuracy"])
+    model_1.summary()
+    history_1 = model_1.fit(trainData,
+                            trainLabel,
+                            epochs=5,
+                            validation_data=(valData, valLabel))
 
 
 if __name__ == "__main__":
