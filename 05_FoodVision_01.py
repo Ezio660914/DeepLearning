@@ -48,6 +48,7 @@ def main():
                                                                  batch_size=32,
                                                                  image_size=imgSize,
                                                                  shuffle=True)
+    print([i for i in trainData.take(1)])
     # obtain test dataset
     testData = keras.preprocessing.image_dataset_from_directory(testDir,
                                                                 label_mode="categorical",
@@ -77,7 +78,7 @@ def main():
     model.compile(keras.optimizers.Adam(),
                   keras.losses.CategoricalCrossentropy(),
                   ["accuracy"])
-    # model.summary()
+    model.summary()
     # for layer in model.layers:
     #     print((layer.name, layer.trainable, layer.dtype, layer.dtype_policy))
 

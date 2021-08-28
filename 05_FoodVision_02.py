@@ -58,7 +58,7 @@ def main():
 
     trainData = trainDirDataset.map(PreProcessImage, tf.data.AUTOTUNE)
     trainData = trainData.shuffle(buffer_size=1000).batch(batch_size=32).prefetch(buffer_size=tf.data.AUTOTUNE)
-
+    print([i for i in trainData.take(1)])
     # obtain train dataset
     # trainData = keras.preprocessing.image_dataset_from_directory(trainDir,
     #                                                              label_mode="categorical",
@@ -97,7 +97,7 @@ def main():
     model.compile(keras.optimizers.Adam(),
                   keras.losses.CategoricalCrossentropy(),
                   ["accuracy"])
-    # model.summary()
+    model.summary()
     # for layer in model.layers:
     #     print((layer.name, layer.trainable, layer.dtype, layer.dtype_policy))
 
