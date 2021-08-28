@@ -12,6 +12,7 @@ import random
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'  # or any {'0', '1', '2'}
 import tensorflow as tf
 import tensorflow.keras as keras
+from tensorflow.keras.layers.experimental.preprocessing import *
 import tensorflow_hub as hub
 import numpy as np
 import pandas as pd
@@ -49,7 +50,27 @@ def main():
     trainData, valData, trainLabel, valLabel = train_test_split(StaticConst.trainDFShuffled["text"].to_numpy(),
                                                                 StaticConst.trainDFShuffled["target"].to_numpy(),
                                                                 test_size=0.1)
-    
+
+    # Find average number of tokens (words) in training Tweets
+    maxLength = round(sum([len(i.split()) for i in trainData]) / len(trainData))
+    # manually set the max token length
+    maxVocabLength = 10000
+    # text vectorization, map word to integer vector
+    textVectorizer = TextVectorization(max_tokens=maxVocabLength,
+                                       output_mode="int",
+                                       output_sequence_length=maxLength)
+    # fit to the training text
+    textVectorizer.adapt(trainData)
+    # visualise the sentence with its vector
+    sentence = random.choice(trainData)
+    print(f"Original text:\n{sentence}\n\nVector:")
+    print(textVectorizer([sentence]))
+    # visualise the vocabulary of the textVectorizer
+    vocab = textVectorizer.get_vocabulary()
+    print(len(vocab))
+    print(vocab[:5])
+    print(vocab[-5:])
+
     pass
 
 
