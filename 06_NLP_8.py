@@ -76,11 +76,11 @@ def main():
     sentenceEncoderLayer = hub.KerasLayer(str(StaticConst.preTrainedModelDir),
                                           input_shape=[],
                                           dtype=tf.string,
-                                          trainable=False,
-                                          name="USE")
+                                          trainable=False)
     # create model using sequential api
     model_6 = keras.Sequential([
         sentenceEncoderLayer,
+        keras.layers.Dense(64, "relu"),
         keras.layers.Dense(1, "relu")
     ])
     model_6.compile(keras.optimizers.Adam(),
@@ -90,7 +90,7 @@ def main():
     # train a classifier on top of use embeddings
     history_6 = model_6.fit(trainData,
                             trainLabel,
-                            epochs=15,
+                            epochs=1,
                             validation_data=(valData, valLabel))
 
 
