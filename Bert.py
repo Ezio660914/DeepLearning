@@ -31,6 +31,8 @@ class StaticConst:
     testDir = pathlib.Path("resource/aclImdb/test")
     batchSize = 32
     seed = 42
+    bertModelDir = pathlib.Path("savedModel/small_bert_bert_en_uncased_L-8_H-512_A-8_2")
+    bertPreprocessDir = pathlib.Path("savedModel/bert_en_uncased_preprocess_3")
 
 
 def main():
@@ -55,6 +57,25 @@ def main():
     testDs = keras.preprocessing.text_dataset_from_directory(str(StaticConst.testDir),
                                                              batch_size=StaticConst.batchSize)
     testDs = testDs.cache().prefetch(tf.data.AUTOTUNE)
+
+    # view some train examples
+    print("Training Examples:")
+    for textBatch, labelBatch in trainDs.take(1):
+        for i in range(3):
+            print(f"Review: {textBatch.numpy()[i]}")
+            label = labelBatch.numpy()[i]
+            print(f"Label: {label} ({classNames[label]})")
+    print("\n")
+
+    # try the preprocess model on some text
+    bertPreprocessModel = hub.KerasLayer(str(StaticConst.bertPreprocessDir))
+    textTest = ["this is such an amazing movie!"]
+    textTestPreprocessed = bertPreprocessModel(textTest)
+    print(f"Keys\t: {list(textTestPreprocessed.keys())}")
+    print(f"Shape\t: {textTestPreprocessed['input_word_ids'].shape}")
+    print(f"Word Ids\t: {textTestPreprocessed['input_word_ids'][0, :12]}")
+    print(f"Input Mask\t: {textTestPreprocessed['input_mask'][0, :12]}")
+    print(f"Type Ids\t: {textTestPreprocessed['input_type_ids'][0, :12]}")
     pass
 
 
