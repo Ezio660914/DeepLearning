@@ -3,7 +3,7 @@
 """
 @author: fsy81
 @software: PyCharm
-@file: Bert.py
+@file: Bert_TextClassification.py
 @time: 2021-08-29 13:08
 """
 
@@ -14,6 +14,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'  # or any {'0', '1', '2'}
 import tensorflow as tf
 import tensorflow.keras as keras
 import tensorflow_hub as hub
+import tensorflow_text
 import numpy as np
 import pandas as pd
 import pathlib
@@ -33,6 +34,17 @@ class StaticConst:
     seed = 42
     bertModelDir = pathlib.Path("savedModel/small_bert_bert_en_uncased_L-8_H-512_A-8_2")
     bertPreprocessDir = pathlib.Path("savedModel/bert_en_uncased_preprocess_3")
+
+
+def BuildClassifierModel():
+    textInput = keras.layers.Input(shape=(1,), dtype=tf.string)
+    encodedInput = hub.KerasLayer(str(StaticConst.bertPreprocessDir)).call(textInput)
+    encodedOutput = hub.KerasLayer(str(StaticConst.bertModelDir), trainable=True).call(encodedInput)
+    net = encodedOutput["pooled_output"]
+    net = keras.layers.Dropout(0.1)(net)
+    net = keras.layers.Dense(1, activation=keras.activations.sigmoid)(net)
+    model = keras.Model(textInput, net)
+    return model
 
 
 def main():
@@ -67,17 +79,34 @@ def main():
             print(f"Label: {label} ({classNames[label]})")
     print("\n")
 
-    # try the preprocess model on some text
+    # load preprocess model
     bertPreprocessModel = hub.KerasLayer(str(StaticConst.bertPreprocessDir))
-    textTest = ["this is such an amazing movie!"]
-    textTestPreprocessed = bertPreprocessModel(textTest)
-    print(f"Keys\t: {list(textTestPreprocessed.keys())}")
-    print(f"Shape\t: {textTestPreprocessed['input_word_ids'].shape}")
-    print(f"Word Ids\t: {textTestPreprocessed['input_word_ids'][0, :12]}")
-    print(f"Input Mask\t: {textTestPreprocessed['input_mask'][0, :12]}")
-    print(f"Type Ids\t: {textTestPreprocessed['input_type_ids'][0, :12]}")
-    pass
 
+    # try the preprocess model on some text
+    textTest = ["this is such an amazing movie!"]
+    textTestPreprocessed = bertPreprocessModel.call(textTest)
+    print(f"Keys: {list(textTestPreprocessed.keys())}")
+    print(f"Shape: {textTestPreprocessed['input_word_ids'].shape}")
+    print(f"Word Ids: {textTestPreprocessed['input_word_ids'][0, :12]}")
+    print(f"Input Mask: {textTestPreprocessed['input_mask'][0, :12]}")
+    print(f"Type Ids: {textTestPreprocessed['input_type_ids'][0, :12]}")
+
+    # load bert model
+    bertModel = hub.KerasLayer(str(StaticConst.bertModelDir))
+    # try the model on preprocessed text
+    textTestResult = bertModel.call(textTestPreprocessed)
+
+    print("\n-------Bert Outputs-------\n")
+    print(f"Keys:{textTestResult.keys()}")
+    print(f"Loaded Bert: {StaticConst.bertPreprocessDir.name}")
+    print(f"Pooled Outputs Shape: {textTestResult['pooled_output'].shape}")
+    print(f"Pooled Outputs Values: {textTestResult['pooled_output'][0, :12]}")
+    print(f"Sequence Outputs Shape: {textTestResult['sequence_output'].shape}")
+    print(f"Sequence Outputs Values: {textTestResult['sequence_output'][0, :12]}")
+
+    # create model
+    model = BuildClassifierModel()
+    
 
 if __name__ == "__main__":
     main()
