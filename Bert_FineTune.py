@@ -10,26 +10,23 @@
 import os
 import pathlib
 import random
-
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'  # or any {'0', '1', '2'}
 import numpy as np
 import matplotlib.pyplot as plt
 import tensorflow as tf
 import tensorflow.keras as keras
 import tensorflow_hub as hub
 import tensorflow_datasets as tfds
-from official.modeling import tf_utils
 from official import nlp
 from official.nlp import bert
-import official.nlp.optimization
-import official.nlp.bert.bert_models
-import official.nlp.bert.configs
-import official.nlp.bert.run_classifier
 import official.nlp.bert.tokenization
-import official.nlp.data.classifier_data_lib
-import official.nlp.modeling.losses
-import official.nlp.modeling.models
-import official.nlp.modeling.networks
+import official.nlp.optimization
+
+tf.get_logger().setLevel('ERROR')
+try:
+    gpus = tf.config.experimental.list_physical_devices('GPU')
+    tf.config.experimental.set_memory_growth(gpus[0], True)
+except:
+    print("GPU error")
 
 bertDir = "savedModel/small_bert_bert_en_uncased_L-8_H-512_A-8_2"
 resourceDir = "resource/MSRC"
@@ -73,10 +70,10 @@ def BuildModel():
     }
     bertOutput = bertModel(bertInputArgs, False)
     net = bertOutput["pooled_output"]
-    net = tf.keras.layers.Dropout(0.1)(net)
-    net = tf.keras.layers.Dense(1)(net)
-    net = tf.keras.layers.Activation(tf.keras.activations.sigmoid, dtype=tf.float32)(net)
-    model = tf.keras.Model([input1, input2, input3], net)
+    net = keras.layers.Dropout(0.1)(net)
+    net = keras.layers.Dense(1)(net)
+    net = keras.layers.Activation(tf.keras.activations.sigmoid, dtype=tf.float32)(net)
+    model = keras.Model([input1, input2, input3], net)
     return model
 
 
@@ -97,8 +94,37 @@ def main():
     glueValLabels = glue["validation"]["label"]
     glueTest = BertEncode(glue["test"], tokenizer)
     glueTestLabels = glue["test"]["label"]
+
+    # build model
     model = BuildModel()
 
+    # setup training parameters
+    initLearningRate = 1e-5
+    epochs = 5
+    batchSize = 32
+    trainDataSize = len(glueTrainLabels)
+    stepsPerEpoch = int(trainDataSize / batchSize)
+    numTrainSteps = stepsPerEpoch * epochs
+    warmupSteps = int(numTrainSteps * 0.1)
+
+    # create an optimizer with learning rate schedule
+    optimizer = nlp.optimization.create_optimizer(
+        init_lr=initLearningRate,
+        num_train_steps=numTrainSteps,
+        num_warmup_steps=warmupSteps,
+        optimizer_type="adamw"
+    )
+
+    # compile the model
+    model.compile(optimizer,
+                  keras.losses.BinaryCrossentropy(),
+                  [keras.metrics.BinaryAccuracy()])
+    model.summary()
+    history = model.fit(glueTrain, glueTrainLabels,
+                        validation_data=(glueVal, glueValLabels),
+                        batch_size=batchSize,
+                        epochs=epochs)
+    model.evaluate(glueVal, glueValLabels)
     pass
 
 
