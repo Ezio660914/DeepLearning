@@ -68,9 +68,13 @@ def BuildModel():
         'input_mask': input2,
         'input_type_ids': input3,
     }
-    bertOutput = bertModel(bertInputArgs, False)
-    net = bertOutput["pooled_output"]
+    bertOutput = bertModel(bertInputArgs, training=False)
+    # net = bertOutput["pooled_output"]
+    net = bertOutput["sequence_output"]
     net = keras.layers.Dropout(0.1)(net)
+    net = keras.layers.Bidirectional(keras.layers.LSTM(256))(net)
+    net = keras.layers.Dense(64)(net)
+    net = keras.layers.Activation(keras.activations.relu, dtype=tf.float32)(net)
     net = keras.layers.Dense(1)(net)
     net = keras.layers.Activation(tf.keras.activations.sigmoid, dtype=tf.float32)(net)
     model = keras.Model([input1, input2, input3], net)
