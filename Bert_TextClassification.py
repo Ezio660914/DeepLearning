@@ -19,6 +19,7 @@ import numpy as np
 import pandas as pd
 import pathlib
 import datetime
+from official.nlp import optimization
 
 try:
     gpus = tf.config.experimental.list_physical_devices('GPU')
@@ -37,12 +38,13 @@ class StaticConst:
 
 
 def BuildClassifierModel():
-    textInput = keras.layers.Input(shape=(1,), dtype=tf.string)
-    encodedInput = hub.KerasLayer(str(StaticConst.bertPreprocessDir)).call(textInput)
-    encodedOutput = hub.KerasLayer(str(StaticConst.bertModelDir), trainable=True).call(encodedInput)
+    textInput = keras.layers.Input(shape=(), dtype=tf.string)
+    encodedInput = hub.KerasLayer(str(StaticConst.bertPreprocessDir))(textInput)
+    encodedOutput = hub.KerasLayer(str(StaticConst.bertModelDir), trainable=True)(encodedInput)
     net = encodedOutput["pooled_output"]
     net = keras.layers.Dropout(0.1)(net)
-    net = keras.layers.Dense(1, activation=keras.activations.sigmoid)(net)
+    net = keras.layers.Dense(1)(net)
+    net = keras.layers.Activation(keras.activations.sigmoid, dtype=tf.float32)(net)
     model = keras.Model(textInput, net)
     return model
 
@@ -70,14 +72,14 @@ def main():
                                                              batch_size=StaticConst.batchSize)
     testDs = testDs.cache().prefetch(tf.data.AUTOTUNE)
 
-    # view some train examples
-    print("Training Examples:")
-    for textBatch, labelBatch in trainDs.take(1):
-        for i in range(3):
-            print(f"Review: {textBatch.numpy()[i]}")
-            label = labelBatch.numpy()[i]
-            print(f"Label: {label} ({classNames[label]})")
-    print("\n")
+    """view some train examples"""
+    # print("Training Examples:")
+    # for textBatch, labelBatch in trainDs.take(1):
+    #     for i in range(3):
+    #         print(f"Review: {textBatch.numpy()[i]}")
+    #         label = labelBatch.numpy()[i]
+    #         print(f"Label: {label} ({classNames[label]})")
+    # print("\n")
 
     # load preprocess model
     bertPreprocessModel = hub.KerasLayer(str(StaticConst.bertPreprocessDir))
@@ -106,7 +108,29 @@ def main():
 
     # create model
     model = BuildClassifierModel()
-    
+
+    # define loss, metric, optimizer
+    loss = keras.losses.BinaryCrossentropy()
+    metrics = keras.metrics.BinaryAccuracy()
+    epochs = 5
+    stepsPerEpoch = tf.data.experimental.cardinality(trainDs).numpy()
+    numTrainSteps = stepsPerEpoch * epochs
+    numWarmupSteps = int(0.1 * numTrainSteps)
+    initLearningRate = 3e-5
+    optimizer = optimization.create_optimizer(init_lr=initLearningRate,
+                                              num_train_steps=numTrainSteps,
+                                              num_warmup_steps=numWarmupSteps,
+                                              optimizer_type="adamw")
+    model.compile(optimizer=optimizer,
+
+                  loss=loss,
+                  metrics=metrics)
+    model.summary()
+    history = model.fit(trainDs,
+                        validation_data=valDs,
+                        epochs=epochs)
+    model.evaluate(testDs)
+
 
 if __name__ == "__main__":
     main()
