@@ -12,7 +12,6 @@ import random
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'  # or any {'0', '1', '2'}
 import tensorflow as tf
-import tensorflow.keras as keras
 import tensorflow_hub as hub
 import tensorflow_text
 import numpy as np
@@ -38,38 +37,38 @@ class StaticConst:
 
 
 def BuildClassifierModel():
-    textInput = keras.layers.Input(shape=(), dtype=tf.string)
+    textInput = tf.keras.layers.Input(shape=(), dtype=tf.string)
     encodedInput = hub.KerasLayer(str(StaticConst.bertPreprocessDir))(textInput)
     encodedOutput = hub.KerasLayer(str(StaticConst.bertModelDir), trainable=True)(encodedInput)
     net = encodedOutput["pooled_output"]
-    net = keras.layers.Dropout(0.1)(net)
-    net = keras.layers.Dense(1)(net)
-    net = keras.layers.Activation(keras.activations.sigmoid, dtype=tf.float32)(net)
-    model = keras.Model(textInput, net)
+    net = tf.keras.layers.Dropout(0.1)(net)
+    net = tf.keras.layers.Dense(1)(net)
+    net = tf.keras.layers.Activation(tf.keras.activations.sigmoid, dtype=tf.float32)(net)
+    model = tf.keras.Model(textInput, net)
     return model
 
 
 def main():
     # get the train dataset
-    trainDs = keras.preprocessing.text_dataset_from_directory(str(StaticConst.trainDir),
-                                                              batch_size=StaticConst.batchSize,
-                                                              validation_split=0.2,
-                                                              subset="training",
-                                                              seed=StaticConst.seed)
+    trainDs = tf.keras.preprocessing.text_dataset_from_directory(str(StaticConst.trainDir),
+                                                                 batch_size=StaticConst.batchSize,
+                                                                 validation_split=0.2,
+                                                                 subset="training",
+                                                                 seed=StaticConst.seed)
     classNames = trainDs.class_names
     trainDs = trainDs.cache().prefetch(tf.data.AUTOTUNE)
 
     # get a validation dataset
-    valDs = keras.preprocessing.text_dataset_from_directory(str(StaticConst.trainDir),
-                                                            batch_size=StaticConst.batchSize,
-                                                            validation_split=0.2,
-                                                            subset="validation",
-                                                            seed=StaticConst.seed)
+    valDs = tf.keras.preprocessing.text_dataset_from_directory(str(StaticConst.trainDir),
+                                                               batch_size=StaticConst.batchSize,
+                                                               validation_split=0.2,
+                                                               subset="validation",
+                                                               seed=StaticConst.seed)
     valDs = valDs.cache().prefetch(tf.data.AUTOTUNE)
 
     # get the test dataset
-    testDs = keras.preprocessing.text_dataset_from_directory(str(StaticConst.testDir),
-                                                             batch_size=StaticConst.batchSize)
+    testDs = tf.keras.preprocessing.text_dataset_from_directory(str(StaticConst.testDir),
+                                                                batch_size=StaticConst.batchSize)
     testDs = testDs.cache().prefetch(tf.data.AUTOTUNE)
 
     """view some train examples"""
@@ -110,8 +109,8 @@ def main():
     model = BuildClassifierModel()
 
     # define loss, metric, optimizer
-    loss = keras.losses.BinaryCrossentropy()
-    metrics = keras.metrics.BinaryAccuracy()
+    loss = tf.keras.losses.BinaryCrossentropy()
+    metrics = tf.keras.metrics.BinaryAccuracy()
     epochs = 5
     stepsPerEpoch = tf.data.experimental.cardinality(trainDs).numpy()
     numTrainSteps = stepsPerEpoch * epochs
@@ -122,7 +121,6 @@ def main():
                                               num_warmup_steps=numWarmupSteps,
                                               optimizer_type="adamw")
     model.compile(optimizer=optimizer,
-
                   loss=loss,
                   metrics=metrics)
     model.summary()
