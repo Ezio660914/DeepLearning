@@ -93,8 +93,8 @@ def MakeTrainTestSplit(windows, horizons, testSplit=0.2):
     return trainWindows, testWindows, trainLabels, testLabels
 
 
-def BuildDenseModel():
-    inputs = keras.Input(shape=(windowSize,))
+def BuildDenseModel(inputShape):
+    inputs = keras.Input(shape=(inputShape,))
     net = keras.layers.Dense(512)(inputs)
     net = keras.layers.Activation(keras.activations.relu, dtype=tf.float32)(net)
     net = keras.layers.Dense(128)(net)
@@ -104,8 +104,8 @@ def BuildDenseModel():
     return model
 
 
-def BuildCNNModel():
-    inputs = keras.Input(shape=(windowSize,))
+def BuildCNNModel(inputShape):
+    inputs = keras.Input(shape=(inputShape,))
     net = keras.layers.Lambda(lambda x: tf.expand_dims(x, 1))(inputs)
     net = keras.layers.Conv1D(filters=128,
                               kernel_size=3,
@@ -121,8 +121,8 @@ def BuildCNNModel():
     return model
 
 
-def BuildLSTMModel():
-    inputs = keras.Input(shape=(windowSize))
+def BuildLSTMModel(inputShape):
+    inputs = keras.Input(shape=(inputShape))
     net = keras.layers.Lambda(lambda x: tf.expand_dims(x, 1))(inputs)
     net = keras.layers.LSTM(128, "relu", return_sequences=True)(net)
     net = keras.layers.LSTM(128, "relu")(net)
@@ -163,7 +163,7 @@ class BlockReward:
                        np.datetime64("2020-05-18")]
 
     @staticmethod
-    def AddFeature(priceDf):
+    def AddFeature(priceDf, normalize=False):
         blockRewardDays = [max(0, (date - priceDf.index[0]).days) for date in BlockReward.blockRewardDate] + [
             len(priceDf)]
         print(blockRewardDays)
@@ -172,9 +172,10 @@ class BlockReward:
             priceDf.iloc[blockRewardDays[i]:blockRewardDays[i + 1], 1] = BlockReward.blockReward[i]
         print(priceDf)
         print(priceDf["BlockReward"].value_counts())
-        # normalize the data using min-max scale
-        priceDf = pd.DataFrame(minmax_scale(priceDf[["Price", "BlockReward"]]), index=priceDf.index,
-                               columns=priceDf.columns)
+        if normalize:
+            # normalize the data using min-max scale
+            priceDf = pd.DataFrame(minmax_scale(priceDf[["Price", "BlockReward"]]), index=priceDf.index,
+                                   columns=priceDf.columns)
         return priceDf
 
 
@@ -209,13 +210,12 @@ def main():
     print(testWindows)
     print(trainLabels)
     print(testLabels)
-    exit(0)
     # create checkpoint callback
     ckptCallback = keras.callbacks.ModelCheckpoint(checkpointDir,
                                                    save_best_only=True,
                                                    save_weights_only=True)
-    # create LSTM model, window=7, horizon=1
-    model = BuildLSTMModel()
+    # create Dense model, window=7, horizon=1
+    model = BuildDenseModel(windowSize + 1)
     model.compile(keras.optimizers.Adam(),
                   keras.losses.mae,
                   metrics=["mse"])
