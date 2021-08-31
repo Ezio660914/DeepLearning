@@ -92,7 +92,7 @@ def MakeTrainTestSplit(windows, labels, testSplit=0.2):
     return trainWindows, testWindows, trainLabels, testLabels
 
 
-def BuildModel():
+def BuildCNNModel():
     inputs = keras.Input(shape=(windowSize,))
     net = keras.layers.Lambda(lambda x: tf.expand_dims(x, 1))(inputs)
     net = keras.layers.Conv1D(filters=128,
@@ -104,6 +104,18 @@ def BuildModel():
     net = keras.layers.Activation(keras.activations.relu, dtype=tf.float32)(net)
     net = keras.layers.Dense(16)(net)
     net = keras.layers.Activation(keras.activations.relu, dtype=tf.float32)(net)
+    outputs = keras.layers.Dense(horizon)(net)
+    model = keras.Model(inputs, outputs)
+    return model
+
+
+def BuildLSTMModel():
+    inputs = keras.Input(shape=(windowSize))
+    net = keras.layers.Lambda(lambda x: tf.expand_dims(x, 1))(inputs)
+    net = keras.layers.LSTM(128, "relu", return_sequences=True)(net)
+    net = keras.layers.LSTM(128, "relu")(net)
+    net = keras.layers.Dense(128, "relu")(net)
+    net = keras.layers.Dense(16, "relu")(net)
     outputs = keras.layers.Dense(horizon)(net)
     model = keras.Model(inputs, outputs)
     return model
@@ -157,8 +169,8 @@ def main():
     ckptCallback = keras.callbacks.ModelCheckpoint(checkpointDir,
                                                    save_best_only=True,
                                                    save_weights_only=True)
-    # create dense model, window=7, horizon=1
-    model = BuildModel()
+    # create LSTM model, window=7, horizon=1
+    model = BuildLSTMModel()
     model.compile(keras.optimizers.Adam(),
                   keras.losses.mae,
                   metrics=["mse"])
