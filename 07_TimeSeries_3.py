@@ -185,6 +185,9 @@ def main():
                      index_col=["Date"])
     # add in block reward feature to data frame
     priceDf = pd.DataFrame(df["Closing Price (USD)"]).rename(columns={"Closing Price (USD)": "Price"})
+    priceDf = BlockReward.AddFeature(priceDf)
+    for i in range(len(priceDf)):
+        priceDf.shift
     # priceDf.plot(figsize=(10, 7), color="orange")
     # plt.ylabel("BTC Price")
     # plt.title("Price of Bitcoin")
