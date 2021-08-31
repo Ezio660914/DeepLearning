@@ -4,7 +4,7 @@
 @author: fsy81
 @software: PyCharm
 @file: 07_TimeSeries_2.py
-@time: 2021-08-31 20:10
+@time: 2021-08-31 22:01
 """
 
 import os
@@ -83,13 +83,13 @@ def MakeWindows(x, windowSize, horizon):
     return windows, labels
 
 
-def MakeTrainTestSplit(windows, labels, testSplit=0.2):
+def MakeTrainTestSplit(windows, horizons, testSplit=0.2):
     """split matching paris of window and labels into train and test split"""
     splitSize = int(len(windows) * (1. - testSplit))
     trainWindows = windows[:splitSize]
-    trainLabels = labels[:splitSize]
+    trainLabels = horizons[:splitSize]
     testWindows = windows[splitSize:]
-    testLabels = labels[splitSize:]
+    testLabels = horizons[splitSize:]
     return trainWindows, testWindows, trainLabels, testLabels
 
 
@@ -186,23 +186,30 @@ def main():
     # add in block reward feature to data frame
     priceDf = pd.DataFrame(df["Closing Price (USD)"]).rename(columns={"Closing Price (USD)": "Price"})
     priceDf = BlockReward.AddFeature(priceDf)
-    for i in range(len(priceDf)):
-        priceDf.shift
+    # make windows and horizon by shifting
+    for i in range(windowSize):
+        priceDf[f"Price_{i + 1}"] = priceDf["Price"].shift(i + 1)
+    priceDf = pd.DataFrame(priceDf.dropna())
+    # create windows and horizons features
+    windows = pd.DataFrame(priceDf.drop("Price", axis=1).astype(np.float32))
+    horizons = pd.DataFrame(priceDf["Price"].astype(np.float32), columns=["Price"])
+    print(priceDf)
+    print(windows)
+    print(horizons)
+
     # priceDf.plot(figsize=(10, 7), color="orange")
     # plt.ylabel("BTC Price")
     # plt.title("Price of Bitcoin")
     # plt.legend(fontsize=14)
     # plt.show()
 
-    # define window and horizon
-
-    priceData = priceDf["Price"].to_numpy()
-    windows, labels = MakeWindows(priceData, windowSize, horizon)
-    for i in range(3):
-        print((windows[i], labels[i]))
-
     # turning windows into training and test sets
-    trainWindows, testWindows, trainLabels, testLabels = MakeTrainTestSplit(windows, labels, 0.2)
+    trainWindows, testWindows, trainLabels, testLabels = MakeTrainTestSplit(windows, horizons, 0.2)
+    print(trainWindows)
+    print(testWindows)
+    print(trainLabels)
+    print(testLabels)
+    exit(0)
     # create checkpoint callback
     ckptCallback = keras.callbacks.ModelCheckpoint(checkpointDir,
                                                    save_best_only=True,
