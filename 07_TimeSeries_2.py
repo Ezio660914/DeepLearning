@@ -30,7 +30,7 @@ except:
     print("GPU error")
 
 dataDir = "resource/BTC_USD_2014-11-04_2021-08-31-CoinDesk.csv"
-checkpointDir = "./savedModel/TimeSeries/DenseModel"
+checkpointDir = "./savedModel/TimeSeries/Conv1DModel"
 horizon = 1
 windowSize = 7
 epochs = 100
@@ -94,9 +94,15 @@ def MakeTrainTestSplit(windows, labels, testSplit=0.2):
 
 def BuildModel():
     inputs = keras.Input(shape=(windowSize,))
-    net = keras.layers.Dense(512)(inputs)
+    net = keras.layers.Lambda(lambda x: tf.expand_dims(x, 1))(inputs)
+    net = keras.layers.Conv1D(filters=128,
+                              kernel_size=3,
+                              padding="causal")(net)
     net = keras.layers.Activation(keras.activations.relu, dtype=tf.float32)(net)
+    net = keras.layers.GlobalAveragePooling1D()(net)
     net = keras.layers.Dense(128)(net)
+    net = keras.layers.Activation(keras.activations.relu, dtype=tf.float32)(net)
+    net = keras.layers.Dense(16)(net)
     net = keras.layers.Activation(keras.activations.relu, dtype=tf.float32)(net)
     outputs = keras.layers.Dense(horizon)(net)
     model = keras.Model(inputs, outputs)
