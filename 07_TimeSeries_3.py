@@ -122,7 +122,7 @@ def BuildCNNModel(inputShape):
 
 
 def BuildLSTMModel(inputShape):
-    inputs = keras.Input(shape=(inputShape))
+    inputs = keras.Input(shape=(inputShape,))
     net = keras.layers.Lambda(lambda x: tf.expand_dims(x, 1))(inputs)
     net = keras.layers.LSTM(128, "relu", return_sequences=True)(net)
     net = keras.layers.LSTM(128, "relu")(net)
@@ -215,7 +215,7 @@ def main():
                                                    save_best_only=True,
                                                    save_weights_only=True)
     # create Dense model, window=7, horizon=1
-    model = BuildDenseModel(windowSize + 1)
+    model = BuildDenseModel(trainWindows.shape[1])
     model.compile(keras.optimizers.Adam(),
                   keras.losses.mae,
                   metrics=["mse"])

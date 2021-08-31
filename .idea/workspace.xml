@@ -47,7 +47,7 @@
       <recent name="D:\@work\Python\DeepLearning\resource\food101\food-101" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.07_TimeSeries_3">
+  <component name="RunManager" selected="Python.07_TimeSeries_2">
     <configuration name="07_TimeSeries_1" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="DeepLearning" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -155,8 +155,8 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.07_TimeSeries_3" />
         <item itemvalue="Python.07_TimeSeries_2" />
+        <item itemvalue="Python.07_TimeSeries_3" />
         <item itemvalue="Python.07_TimeSeries_1" />
         <item itemvalue="Python.Bert_FineTune" />
         <item itemvalue="Python.Bert_TextClassification (1)" />
