@@ -29,7 +29,7 @@ except:
     print("GPU error")
 
 dataDir = "resource/BTC_USD_2014-11-04_2021-08-31-CoinDesk.csv"
-checkpointDir = "./savedModel/TimeSeries"
+checkpointDir = "./savedModel/TimeSeries/DenseModel"
 horizon = 1
 windowSize = 7
 epochs = 100
@@ -147,7 +147,7 @@ def main():
     # turning windows into training and test sets
     trainWindows, testWindows, trainLabels, testLabels = MakeTrainTestSplit(windows, labels, 0.2)
     # create checkpoint callback
-    ckptCallback = keras.callbacks.ModelCheckpoint(os.path.join(checkpointDir, "DenseModel"),
+    ckptCallback = keras.callbacks.ModelCheckpoint(checkpointDir,
                                                    save_best_only=True,
                                                    save_weights_only=True)
     # create dense model, window=7, horizon=1
@@ -166,10 +166,16 @@ def main():
                     val_loss=history.history["val_loss"])
     mseDict = dict(mse=history.history["mse"],
                    val_mse=history.history["val_mse"])
-    pd.DataFrame(lossDict).plot()
-    pd.DataFrame(mseDict).plot()
-    # make predictions
+    plt.subplot(1, 2, 1)
+    plt.plot(pd.DataFrame(lossDict), label=lossDict.keys())
+    plt.legend()
+    plt.subplot(1, 2, 2)
+    plt.plot(pd.DataFrame(mseDict), label=mseDict.keys())
+    plt.legend()
+    # make predictions with the best saved model
     plt.figure()
+    model.load_weights(checkpointDir)
+    model.evaluate(testWindows, testLabels)
     testPred = tf.squeeze(model.predict(testWindows))
     plot_time_series(priceDf.index[-len(testWindows):].to_numpy(), testPred, label="pred")
     plot_time_series(priceDf.index[-len(testWindows):].to_numpy(), testLabels, '-', label="true")
