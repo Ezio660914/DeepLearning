@@ -71,48 +71,34 @@ class NBeatsBlock(keras.layers.Layer):
         return backcast, forecast
 
 
-class NBeatsModel(keras.Model):
-
-    def __init__(self, *,
-                 horizon,
-                 windowSize,
-                 batchSize,
-                 nNeurons,
-                 nLayers,
-                 nStacks,
-                 **kwargs):
-        super().__init__(**kwargs)
-        self.horizon = horizon
-        self.windowSize = windowSize
-        self.batchSize = batchSize
-        self.nNeurons = nNeurons
-        self.nLayers = nLayers
-        self.nStacks = nStacks
-        self.inputSize = self.windowSize * self.horizon
-        self.thetaSize = self.inputSize + self.horizon
-        self.initialBlockLayer = NBeatsBlock(input_size=self.inputSize,
-                                             theta_size=self.thetaSize,
-                                             horizon=self.horizon,
-                                             n_neurons=self.nNeurons,
-                                             n_layers=self.nLayers,
-                                             name="InitialBlock")
-        self.nbeatsBlockStack = [NBeatsBlock(input_size=self.inputSize,
-                                             theta_size=self.thetaSize,
-                                             horizon=self.horizon,
-                                             n_neurons=self.nNeurons,
-                                             n_layers=self.nLayers,
-                                             name=f"NBeatsBlock_{i}") for i in range(self.nStacks - 1)]
-        self.build(input_shape=(self.batchSize, self.inputSize))
-
-    def call(self, inputs, training=None, mask=None):
-        # create initial backcast and forecast input
-        residuals, forecast = self.initialBlockLayer(inputs)
-        # create stacks of block layers
-        for i in range(self.nStacks - 1):
-            backcast, blockForecast = self.nbeatsBlockStack[i](residuals)
-            residuals = keras.layers.subtract([residuals, backcast], name=f"subtract_{i}")
-            forecast = keras.layers.add([forecast, blockForecast], name=f"add_{i}")
-        return forecast
+def BuildNBeatsModel(horizon,
+                     windowSize,
+                     nNeurons,
+                     nLayers,
+                     nStacks):
+    inputSize = windowSize * horizon
+    thetaSize = inputSize + horizon
+    inputs = keras.layers.Input(shape=(inputSize,))
+    initialBlockLayer = NBeatsBlock(input_size=inputSize,
+                                    theta_size=thetaSize,
+                                    horizon=horizon,
+                                    n_neurons=nNeurons,
+                                    n_layers=nLayers,
+                                    name="InitialBlock")
+    # create initial backcast and forecast input
+    residuals, forecast = initialBlockLayer(inputs)
+    # create stacks of block layers
+    for i in range(nStacks - 1):
+        backcast, blockForecast = NBeatsBlock(input_size=inputSize,
+                                              theta_size=thetaSize,
+                                              horizon=horizon,
+                                              n_neurons=nNeurons,
+                                              n_layers=nLayers,
+                                              name=f"NBeatsBlock_{i}")(residuals)
+        residuals = keras.layers.subtract([residuals, backcast], name=f"subtract_{i}")
+        forecast = keras.layers.add([forecast, blockForecast], name=f"add_{i}")
+    model = keras.Model(inputs, forecast)
+    return model
 
 
 def main():
@@ -148,13 +134,11 @@ def main():
     testDataset = testDataset.batch(batch_size=batchSize).prefetch(tf.data.AUTOTUNE)
 
     # create model
-    model = NBeatsModel(horizon=horizon,
-                        windowSize=windowSize,
-                        batchSize=batchSize,
-                        nNeurons=nNeurons,
-                        nLayers=nLayers,
-                        nStacks=nStacks,
-                        name="NBeatsModel")
+    model = BuildNBeatsModel(horizon=horizon,
+                             windowSize=windowSize,
+                             nNeurons=nNeurons,
+                             nLayers=nLayers,
+                             nStacks=nStacks)
     model.compile(keras.optimizers.Adam(),
                   "mae",
                   ["mae"])
@@ -166,14 +150,14 @@ def main():
     callback_2 = keras.callbacks.ReduceLROnPlateau(factor=0.1,
                                                    patience=100,
                                                    verbose=1)
-    keras.utils.plot_model(model, show_shapes=True)
+    keras.utils.plot_model(model, show_shapes=True, dpi=300)
     # fit the model
     history = model.fit(trainDataset,
                         epochs=epochs,
                         validation_data=testDataset,
                         callbacks=[callback_1, callback_2],
                         verbose=0)
-
+    model.evaluate(testDataset)
     exit(0)
 
 
